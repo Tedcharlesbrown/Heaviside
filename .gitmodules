@@ -1,0 +1,3 @@
+[submodule "extern/OpenColorIO"]
+	path = extern/OpenColorIO
+	url = https://github.com/AcademySoftwareFoundation/OpenColorIO.git
