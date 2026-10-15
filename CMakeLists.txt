@@ -47,4 +47,7 @@ target_link_options(heaviside PRIVATE
   -sENVIRONMENT=web,worker,node
   -sALLOW_MEMORY_GROWTH=1
   -sFORCE_FILESYSTEM=1
-  -sEXPORTED_RUNTIME_METHODS=FS)
+  -sEXPORTED_RUNTIME_METHODS=FS
+  # no eval or new Function: pages with a strict Content-Security-Policy (no 'unsafe-eval'),
+  # such as Nearside's desktop app, can load it
+  -sDYNAMIC_EXECUTION=0)
