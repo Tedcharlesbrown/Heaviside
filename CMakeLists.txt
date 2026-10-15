@@ -32,8 +32,12 @@ set(OCIO_USE_SIMD OFF CACHE BOOL "" FORCE)
 set(OCIO_INSTALL_EXT_PACKAGES ALL CACHE STRING "" FORCE)
 add_subdirectory(extern/OpenColorIO EXCLUDE_FROM_ALL)
 
+# YY.MMDD.HHMM, the commit time in New York; CI sets it (.github/workflows/release.yml)
+set(HEAVISIDE_VERSION "dev" CACHE STRING "Heaviside version, reported by build()")
+
 add_executable(heaviside src/heaviside.cpp)
 target_compile_features(heaviside PRIVATE cxx_std_17)
+target_compile_definitions(heaviside PRIVATE HEAVISIDE_VERSION="${HEAVISIDE_VERSION}")
 target_link_libraries(heaviside PRIVATE OpenColorIO embind)
 set_target_properties(heaviside PROPERTIES SUFFIX ".mjs")
 target_link_options(heaviside PRIVATE

@@ -32,6 +32,7 @@ the config, keeping the folder layout, before calling `load`.
 | Function | Returns |
 |---|---|
 | `version()` | OCIO version string |
+| `build()` | Heaviside's version, `YY.MMDD.HHMM` (`dev` for a local build) |
 | `load(path)` | nothing; throws an `Error` with OCIO's message if the config fails to load or validate |
 | `info()` | `{ name, spaces: [{ name, family, encoding, display }], displays: [{ name, views }] }` |
 | `bakeView(source, display, view, size)` | `Float32Array`, source code values 0 to 1 through the display and view |
@@ -63,17 +64,16 @@ Build notes:
 
 ## Releases
 
-`.github/workflows/release.yml` builds and tests every push. A version tag publishes a
-GitHub Release with `heaviside.mjs`, `heaviside.wasm` and `SHA256SUMS`:
+The version is the commit's time in New York, `YY.MMDD.HHMM` (`26.1015.1215`), the same
+scheme as Nearside and Farside. `.github/workflows/release.yml` builds and tests every push
+and pull request, and every push to `main` that passes becomes a GitHub Release tagged with
+that version, holding `heaviside.mjs`, `heaviside.wasm` and `SHA256SUMS`. There is no
+tagging by hand.
 
-```
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Users pin a release by tag and checksum, so a published release is never replaced. To fix
-one, tag a new version. CI uses Emscripten 6.0.12, the version the local builds were made
-with.
+Users pin a release by tag and checksum, so a published release is never replaced; a
+version that already has one is skipped. CI uses Emscripten 6.0.12, the version the local
+builds were made with. A local build reports `dev` unless configured with
+`-DHEAVISIDE_VERSION=...`.
 
 ## Test
 

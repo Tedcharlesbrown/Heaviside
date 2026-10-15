@@ -49,7 +49,13 @@ val bake(const OCIO::ConstProcessorRcPtr &processor, int size) {
 
 }  // namespace
 
+#ifndef HEAVISIDE_VERSION
+#define HEAVISIDE_VERSION "dev"
+#endif
+
+// OCIO's version, and Heaviside's own (YY.MMDD.HHMM, or "dev" for a local build)
 std::string version() { return OCIO::GetVersion(); }
+std::string build() { return HEAVISIDE_VERSION; }
 
 void load(const std::string &path) {
   try {
@@ -111,6 +117,7 @@ val bakeSpace(const std::string &source, const std::string &destination, int siz
 
 EMSCRIPTEN_BINDINGS(heaviside) {
   emscripten::function("version", &version);
+  emscripten::function("build", &build);
   emscripten::function("load", &load);
   emscripten::function("info", &info);
   emscripten::function("bakeView", &bakeView);

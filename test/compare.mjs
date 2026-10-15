@@ -11,7 +11,7 @@ import Heaviside from '../build/heaviside.mjs';
 
 const reference = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const H = await Heaviside();
-console.log(`OCIO ${H.version()}`);
+console.log(`Heaviside ${H.build()}, OCIO ${H.version()}`);
 
 function copyTree(from, to) {
   H.FS.mkdirTree(to);

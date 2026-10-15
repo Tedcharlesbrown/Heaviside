@@ -1,13 +1,14 @@
-# Build Heaviside, check it against PyOpenColorIO, and on a version tag (v*) publish
-# heaviside.mjs, heaviside.wasm and SHA256SUMS as a GitHub Release. Nearside pins a release
-# by tag and checksum (Nearside heaviside.json), so a release is never replaced: fix
-# forward with a new tag.
+# Build Heaviside, check it against PyOpenColorIO, and release every push to main that passes.
+#
+# The version is the commit time in New York, YY.MMDD.HHMM (26.1015.1215), as Nearside and
+# Farside do it; it is the release tag and is built into the module (Heaviside.build()).
+# Nearside pins a release by tag and checksum (Nearside heaviside.json), so a release is
+# never replaced: a version that already has one is skipped.
 name: Build and release
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -22,6 +23,10 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Version
+        id: version
+        run: echo "version=$(TZ=America/New_York git log -1 --format=%cd --date=format-local:%y.%m%d.%H%M)" | tee -a "$GITHUB_OUTPUT"
+
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 6.0.12
@@ -30,7 +35,7 @@ jobs:
 
       - name: Build
         run: |
-          emcmake cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          emcmake cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHEAVISIDE_VERSION=${{ steps.version.outputs.version }}
           cmake --build build
 
       - uses: actions/setup-python@v5
@@ -52,18 +57,24 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: heaviside
+          name: heaviside-${{ steps.version.outputs.version }}
           path: |
             build/heaviside.mjs
             build/heaviside.wasm
             build/SHA256SUMS
 
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            echo "Release $VERSION exists; releases are never replaced"
+            exit 0
+          fi
           ocio=$(git -C extern/OpenColorIO describe --tags)
-          gh release create "$GITHUB_REF_NAME" build/heaviside.mjs build/heaviside.wasm build/SHA256SUMS \
-            --title "$GITHUB_REF_NAME" \
+          gh release create "$VERSION" build/heaviside.mjs build/heaviside.wasm build/SHA256SUMS \
+            --target "$GITHUB_SHA" \
+            --title "Heaviside $VERSION" \
             --notes "OpenColorIO ${ocio}, Emscripten 6.0.12. Checked against PyOpenColorIO 2.5.2 on the built-in studio config."
