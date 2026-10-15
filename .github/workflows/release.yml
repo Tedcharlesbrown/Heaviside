@@ -1,0 +1,69 @@
+# Build Heaviside, check it against PyOpenColorIO, and on a version tag (v*) publish
+# heaviside.mjs, heaviside.wasm and SHA256SUMS as a GitHub Release. Nearside pins a release
+# by tag and checksum (Nearside heaviside.json), so a release is never replaced: fix
+# forward with a new tag.
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.12
+
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Build
+        run: |
+          emcmake cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Compare with PyOpenColorIO
+        run: |
+          pip install opencolorio==2.5.2
+          python test/reference.py reference.json ocio://studio-config-latest
+          node test/compare.mjs reference.json
+
+      - name: Checksums
+        working-directory: build
+        run: sha256sum heaviside.mjs heaviside.wasm | tee SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: heaviside
+          path: |
+            build/heaviside.mjs
+            build/heaviside.wasm
+            build/SHA256SUMS
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ocio=$(git -C extern/OpenColorIO describe --tags)
+          gh release create "$GITHUB_REF_NAME" build/heaviside.mjs build/heaviside.wasm build/SHA256SUMS \
+            --title "$GITHUB_REF_NAME" \
+            --notes "OpenColorIO ${ocio}, Emscripten 6.0.12. Checked against PyOpenColorIO 2.5.2 on the built-in studio config."

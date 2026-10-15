@@ -61,6 +61,20 @@ Build notes:
 - SIMD is off. Browsers support WebAssembly SIMD, but OCIO's SIMD code is written for SSE.
 - No threads, so the page needs no cross-origin isolation headers.
 
+## Releases
+
+`.github/workflows/release.yml` builds and tests every push. A version tag publishes a
+GitHub Release with `heaviside.mjs`, `heaviside.wasm` and `SHA256SUMS`:
+
+```
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Users pin a release by tag and checksum, so a published release is never replaced. To fix
+one, tag a new version. CI uses Emscripten 6.0.12, the version the local builds were made
+with.
+
 ## Test
 
 Compares bakes against PyOpenColorIO.
