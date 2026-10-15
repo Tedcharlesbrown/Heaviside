@@ -73,7 +73,8 @@ jobs:
             echo "Release $VERSION exists; releases are never replaced"
             exit 0
           fi
-          ocio=$(git -C extern/OpenColorIO describe --tags)
+          # from the module itself: the checkout has no submodule tags to describe
+          ocio=$(node --input-type=module -e "import H from './build/heaviside.mjs'; console.log((await H()).version())")
           gh release create "$VERSION" build/heaviside.mjs build/heaviside.wasm build/SHA256SUMS \
             --target "$GITHUB_SHA" \
             --title "Heaviside $VERSION" \
